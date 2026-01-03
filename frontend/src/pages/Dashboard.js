@@ -14,29 +14,40 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 function Dashboard() {
-  // 🔐 Protect route
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return <Navigate to="/login" />;
-  }
-
-  // 🟢 State
+  // 🟢 Hooks MUST be at top
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState("Todo");
 
+  // 🔐 Auth
+  const token = localStorage.getItem("token");
+
   // 🟢 Fetch tasks
   const fetchTasks = async () => {
-    const res = await axios.get("http://localhost:5000/api/tasks", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setTasks(res.data);
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/tasks",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setTasks(res.data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // 🟢 Load tasks on page open
+  // 🟢 Load tasks
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (token) {
+      fetchTasks();
+    }
+  }, [token]);
+
+  // 🔐 Redirect AFTER hooks
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
 
   // 🟢 Add task
   const addTask = async () => {
@@ -56,7 +67,7 @@ function Dashboard() {
     fetchTasks();
   };
 
-  // 🟢 Update task status
+  // 🟢 Update task
   const updateStatus = async (id, newStatus) => {
     await axios.patch(
       `http://localhost:5000/api/tasks/${id}`,
@@ -81,7 +92,7 @@ function Dashboard() {
     window.location.href = "/login";
   };
 
-  // 🟢 Chart Data Logic
+  // 🟢 Chart data
   const todo = tasks.filter(t => t.status === "Todo").length;
   const progress = tasks.filter(t => t.status === "In Progress").length;
   const completed = tasks.filter(t => t.status === "Completed").length;
@@ -103,7 +114,6 @@ function Dashboard() {
 
       <hr />
 
-      {/* 🟢 Chart Section */}
       <h3>Task Status Chart</h3>
       <div style={{ width: "300px", marginBottom: "30px" }}>
         <Pie data={chartData} />
@@ -111,7 +121,6 @@ function Dashboard() {
 
       <hr />
 
-      {/* 🟢 Add Task */}
       <h3>Add Task</h3>
       <input
         type="text"
@@ -136,7 +145,6 @@ function Dashboard() {
 
       <hr />
 
-      {/* 🟢 Task List */}
       <h3>My Tasks</h3>
 
       {tasks.length === 0 ? (
@@ -155,7 +163,9 @@ function Dashboard() {
 
             <select
               value={task.status}
-              onChange={(e) => updateStatus(task.id, e.target.value)}
+              onChange={(e) =>
+                updateStatus(task.id, e.target.value)
+              }
             >
               <option value="Todo">Todo</option>
               <option value="In Progress">In Progress</option>
