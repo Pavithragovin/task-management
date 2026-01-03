@@ -6,3 +6,6 @@ User.hasMany(Task);
 Task.belongsTo(User);
 
 module.exports = { sequelize, User, Task };
+module.exports = {
+  sequelize: null
+};
